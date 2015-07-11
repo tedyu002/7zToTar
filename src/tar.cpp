@@ -221,6 +221,8 @@ size_t output_file(FILE *target, FILE *input, const char *name, size_t size, uin
 		strcpy(head.mode, "0000444");
 	}
 
+	to_oct(head.size, sizeof(head.size), size);
+
 	build_checksum(&head);
 
 	void *buffer = calloc(1, BUF_SIZE);
