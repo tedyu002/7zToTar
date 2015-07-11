@@ -5,7 +5,9 @@ This program is used to convert a 7z file to posix format tar by the 7z command 
 
 This program is only workable under AMD64/Linux.
 
-It uses the 7z command to extract the stream and then it encapsulates it with tar stream out standard output. The original information in the 7z archive is not append to the tar, such as the time information.
+It uses the 7z command to extract the stream and then it encapsulates it with tar stream out standard output. Not all information in the 7z archive is not append to the tar.
+
+The symbolic link is not supported.
 
 The correction of this program is no guarantee.
 
