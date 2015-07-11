@@ -80,6 +80,7 @@ static inline int to_oct(char *target, int len, T num){
 		return -1;
 	}
 	strcpy(target, s.c_str());
+	return 0;
 }
 
 static inline void build_checksum(tar_header_t *head){
@@ -115,16 +116,11 @@ static inline void tar_header_standard(tar_header_t *head, const char *name, tim
 		assert(0 && "..");
 	}
 
-	if(strlen(dir_name) >= sizeof(head->prefix)){
-		assert(0 && "dir name too long");
-	}
+	strncpy(head->prefix, dir_name, sizeof(head->prefix));
+	strncpy(head->name, base_name, sizeof(head->name));
 
-	if(strlen(base_name) >= sizeof(head->name)){
-		assert(0 && "base name too long");
-	}
-
-	strcpy(head->prefix, dir_name);
-	strcpy(head->name, base_name);
+	head->prefix[ sizeof(head->prefix) - 1] = '\0';
+	head->name[ sizeof(head->name) - 1] = '\0';
 
 	free(dir_name_i);
 	free(base_name_i);
@@ -150,31 +146,46 @@ static inline void tar_header_standard(tar_header_t *head, const char *name, tim
 }
 
 static inline size_t output_pax_extends(FILE *target, const char *name, size_t size, time_t mtime){
-	tar_header_t head, buf;
-
+	tar_header_t head;
 	tar_header_init(&head);
-	tar_header_init(&buf);
 	tar_header_standard(&head, name, mtime);
 
 	std::stringstream ss;
 	ss << "./PaxHeaders./" << getuid() << '/' << head.name;
 	std::string new_name = ss.str();
-	assert(new_name.size() < sizeof(head.name));
+	strncpy(head.name, new_name.c_str(), sizeof(head.name));
+	head.name[sizeof(head.name) - 1] = '\0';
+
+	strcpy(head.mode, "0000644");
 
 	head.typeflag[0] = 'x'; // POSIX extend
 
-	strcpy(head.name, new_name.c_str());
-	strcpy(head.mode, "0000644");
 
-	std::string size_entry = pax_entry("size", size);
-	memcpy(&buf, size_entry.c_str(), size_entry.size());
+	std::stringstream entries_ss;
 
-	to_oct(head.size, sizeof(head.size), size_entry.size());
+	entries_ss << pax_entry("size", size);
+	entries_ss << pax_entry("path", name);
+
+	const std::string &entries_str = entries_ss.str();
+
+	assert(to_oct(head.size, sizeof(head.size), entries_str.size()) == 0);
 	build_checksum(&head);
 
 	assert(fwrite(&head, sizeof(head), 1, target) == 1);
-	assert(fwrite(&buf, sizeof(buf), 1, target) == 1);
-	return sizeof(head) + sizeof(buf);
+	assert(fwrite(entries_str.c_str(), entries_str.size(), 1, target) == 1);
+
+	size_t total = sizeof(head);
+	total += entries_str.size();
+
+	if (entries_str.size() % sizeof(head) != 0) {
+		size_t padding = sizeof(head) - (entries_str.size() % sizeof(head));
+		void *pad_buf = calloc(1, padding);
+		assert(fwrite(pad_buf, padding, 1, target) == 1);
+		total += padding;
+		free(pad_buf);
+	}
+
+	return total;
 }
 
 size_t output_dir(FILE *target, const char *name, time_t mtime){
