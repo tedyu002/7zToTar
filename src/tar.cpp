@@ -125,11 +125,11 @@ static inline void tar_header_standard(tar_header_t *head, const char *name, tim
 	free(dir_name_i);
 	free(base_name_i);
 
-	to_oct(head->uid, sizeof(head->uid), getuid());
-	to_oct(head->gid, sizeof(head->uid), getgid());
+	assert(to_oct(head->uid, sizeof(head->uid), getuid()) == 0);
+	assert(to_oct(head->gid, sizeof(head->uid), getgid()) == 0);
 
-	to_oct(head->devmajor, sizeof(head->devmajor), 0);
-	to_oct(head->devminor, sizeof(head->devminor), 0);
+	assert(to_oct(head->devmajor, sizeof(head->devmajor), 0) == 0);
+	assert(to_oct(head->devminor, sizeof(head->devminor), 0) == 0);
 
 	std::string user_name = getlogin();
 	struct group *g = getgrgid(getgid());
@@ -142,7 +142,7 @@ static inline void tar_header_standard(tar_header_t *head, const char *name, tim
 	strcpy(head->uname, user_name.c_str());
 	strcpy(head->gname, group_name.c_str());
 
-	to_oct(head->mtime, sizeof(head->mtime), mtime);
+	assert(to_oct(head->mtime, sizeof(head->mtime), mtime) == 0);
 }
 
 static inline size_t output_pax_extends(FILE *target, const char *name, size_t size, time_t mtime){
@@ -220,8 +220,6 @@ size_t output_file(FILE *target, FILE *input, const char *name, size_t size, uin
 	}else {
 		strcpy(head.mode, "0000444");
 	}
-
-	bool append_size_entry = to_oct(head.size, sizeof(head.size), size) == -1;
 
 	build_checksum(&head);
 
