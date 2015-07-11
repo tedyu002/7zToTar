@@ -18,8 +18,9 @@ public:
 	size_t size;
 	uint32_t crc;
 	bool is_dir;
+	bool is_ro;
 	time_t mtime;
-	inline Entry() : size(0), crc(0), is_dir(false), mtime(0){}
+	inline Entry() : size(0), crc(0), is_dir(false), is_ro(false), mtime(0){}
 };
 
 std::vector<Entry> get_7z_list(const char *name);

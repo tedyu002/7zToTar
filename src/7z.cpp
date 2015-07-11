@@ -20,8 +20,6 @@
 #define CRC_HEAD  "CRC = "
 #define MTIME_HEAD "Modified = "
 #define ATTR_HEAD "Attributes = "
-#define DIR_FIELD "Attributes = D...."
-#define REG_FIELD "Attributes = ....A"
 
 std::vector<Entry> get_7z_list(const char *name) {
 	pid_t pid;
@@ -97,13 +95,12 @@ std::vector<Entry> get_7z_list(const char *name) {
 				entry.size = (size_t)res;
 				set_field++;
 			} else if(strncmp(buf, ATTR_HEAD, strlen(ATTR_HEAD)) == 0) {
-				if( strcmp(buf, REG_FIELD) == 0 ){
-					set_field++;
-				}else if(strcmp(buf, DIR_FIELD) == 0) {
-					set_field++;
+				set_field++;
+				const char *head = &buf[strlen(ATTR_HEAD)];
+				if (strchr(head, 'D') != NULL) {
 					entry.is_dir = true;
-				}else{
-					assert(0 && "Unknown Type");
+				} else if(strchr(head, 'R') != NULL) {
+					entry.is_ro = true;
 				}
 			} else if(strncmp(buf, CRC_HEAD, strlen(CRC_HEAD)) == 0) {
 				set_field++;

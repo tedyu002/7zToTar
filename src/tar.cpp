@@ -195,7 +195,7 @@ size_t output_dir(FILE *target, const char *name, time_t mtime){
 	return sizeof(head) + attr_size;
 }
 
-size_t output_file(FILE *target, FILE *input, const char *name, size_t size, uint32_t *crc, time_t mtime)
+size_t output_file(FILE *target, FILE *input, const char *name, size_t size, uint32_t *crc, time_t mtime, bool ro)
 {
 	size_t total = size + output_pax_extends(target, name, size, mtime);
 
@@ -204,7 +204,11 @@ size_t output_file(FILE *target, FILE *input, const char *name, size_t size, uin
 	tar_header_standard(&head, name, mtime);
 	head.typeflag[0] = '0'; // regular files.
 
-	strcpy(head.mode, "0000644");
+	if (ro == false) {
+		strcpy(head.mode, "0000644");
+	}else {
+		strcpy(head.mode, "0000444");
+	}
 
 	bool append_size_entry = to_oct(head.size, sizeof(head.size), size) == -1;
 
