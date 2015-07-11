@@ -23,9 +23,9 @@ int main(int argc, char *argv[] ){
 
 	for( const Entry &entry : entries) {
 		if (entry.is_dir == true) {
-			total_size += output_dir(stdout, entry.name.c_str());
+			total_size += output_dir(stdout, entry.name.c_str(), entry.mtime);
 		}else{
-			total_size += output_file(stdout, hand.input, entry.name.c_str(), entry.size, &crc);
+			total_size += output_file(stdout, hand.input, entry.name.c_str(), entry.size, &crc, entry.mtime);
 			if( entry.size != 0) {
 				assert(crc == entry.crc);
 			}

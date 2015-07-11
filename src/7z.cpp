@@ -6,17 +6,19 @@
 #include<cstdint>
 #include<climits>
 #include<cctype>
-
+#include<ctime>
 #include<unistd.h>
 #include<sys/wait.h>
 
 #include<arpa/inet.h>
 
 #include"7z.h"
+#include"time.h"
 
 #define PATH_HEAD "Path = "
 #define SIZE_HEAD "Size = "
 #define CRC_HEAD  "CRC = "
+#define MTIME_HEAD "Modified = "
 #define ATTR_HEAD "Attributes = "
 #define DIR_FIELD "Attributes = D...."
 #define REG_FIELD "Attributes = ....A"
@@ -78,7 +80,7 @@ std::vector<Entry> get_7z_list(const char *name) {
 			}
 
 			if (r_size == 0) {
-				assert(set_field == 4);
+				assert(set_field == 5);
 				entries.push_back(entry);
 				break;
 			}
@@ -125,6 +127,11 @@ std::vector<Entry> get_7z_list(const char *name) {
 						entry.crc = (entry.crc << 8) + present;
 					}
 				}
+			} else if(strncmp(buf, MTIME_HEAD, strlen(MTIME_HEAD)) == 0) {
+				set_field++;
+				const std::string mtime = &buf[strlen(MTIME_HEAD)];
+
+				entry.mtime = parse_time(mtime);
 			}
 		}
 	}

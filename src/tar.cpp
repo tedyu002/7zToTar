@@ -97,7 +97,7 @@ static inline void tar_header_init(tar_header_t *head){
 	memset(head, 0, sizeof(*head));
 }
 
-static inline void tar_header_standard(tar_header_t *head, const char *name){
+static inline void tar_header_standard(tar_header_t *head, const char *name, time_t mtime){
 	strcpy(head->magic, "ustar");
 	head->version[0] = head->version[1] = '0';
 
@@ -146,15 +146,15 @@ static inline void tar_header_standard(tar_header_t *head, const char *name){
 	strcpy(head->uname, user_name.c_str());
 	strcpy(head->gname, group_name.c_str());
 
-	to_oct(head->mtime, sizeof(head->mtime), std::time(NULL));
+	to_oct(head->mtime, sizeof(head->mtime), mtime);
 }
 
-static inline size_t output_pax_extends(FILE *target, const char *name, size_t size){
+static inline size_t output_pax_extends(FILE *target, const char *name, size_t size, time_t mtime){
 	tar_header_t head, buf;
 
 	tar_header_init(&head);
 	tar_header_init(&buf);
-	tar_header_standard(&head, name);
+	tar_header_standard(&head, name, mtime);
 
 	std::stringstream ss;
 	ss << "./PaxHeaders./" << getuid() << '/' << head.name;
@@ -177,13 +177,13 @@ static inline size_t output_pax_extends(FILE *target, const char *name, size_t s
 	return sizeof(head) + sizeof(buf);
 }
 
-size_t output_dir(FILE *target, const char *name){
+size_t output_dir(FILE *target, const char *name, time_t mtime){
 
-	size_t attr_size = output_pax_extends(target, name, 0);
+	size_t attr_size = output_pax_extends(target, name, 0, mtime);
 
 	tar_header_t head;
 	tar_header_init(&head);
-	tar_header_standard(&head, name);
+	tar_header_standard(&head, name, mtime);
 
 	head.typeflag[0] = '5'; //Directory
 
@@ -195,13 +195,13 @@ size_t output_dir(FILE *target, const char *name){
 	return sizeof(head) + attr_size;
 }
 
-size_t output_file(FILE *target, FILE *input, const char *name, size_t size, uint32_t *crc)
+size_t output_file(FILE *target, FILE *input, const char *name, size_t size, uint32_t *crc, time_t mtime)
 {
-	size_t total = size + output_pax_extends(target, name, size);;
+	size_t total = size + output_pax_extends(target, name, size, mtime);
 
 	tar_header_t head;
 	tar_header_init(&head);
-	tar_header_standard(&head, name);
+	tar_header_standard(&head, name, mtime);
 	head.typeflag[0] = '0'; // regular files.
 
 	strcpy(head.mode, "0000644");
